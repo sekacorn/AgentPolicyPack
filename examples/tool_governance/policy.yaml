@@ -1,0 +1,147 @@
+schema_version: "1.0"
+bundle:
+  id: tool-governance
+  name: Tool Governance Example
+  version: "1.0.0"
+  namespace: example.tool_governance
+  description: Example policies for AI-agent tool use.
+  default_decision: deny
+  conflict_strategy: deny_overrides
+  tags:
+    - example
+    - tools
+data_classifications:
+  - public
+  - internal
+  - confidential
+  - restricted
+policies:
+  - id: deny-shell
+    name: Deny shell execution
+    enabled: true
+    effect: deny
+    priority: 300
+    targets:
+      tools:
+        names:
+          - shell
+      actions:
+        - tool.call
+    obligations:
+      - type: audit
+        parameters:
+          level: detailed
+    reason: Shell execution is prohibited by default.
+  - id: require-review-database-write
+    name: Require review for database writes
+    effect: require_review
+    priority: 250
+    targets:
+      tools:
+        capabilities:
+          - database_write
+      actions:
+        - tool.call
+      environments:
+        names:
+          - production
+    obligations:
+      - type: require_review
+        parameters:
+          reviewer_role: data_steward
+          timeout_behavior: deny
+    reason: Production database writes require human review.
+  - id: allow-research-search
+    name: Allow research agents to use search
+    effect: allow
+    priority: 100
+    targets:
+      subjects:
+        roles:
+          - research_agent
+      tools:
+        names:
+          - search
+        risks:
+          - low
+      actions:
+        - tool.call
+      environments:
+        names:
+          - development
+          - production
+    conditions:
+      all:
+        - field: resource.attributes.classification
+          operator: in
+          value:
+            - public
+            - internal
+        - field: context.estimated_cost_usd
+          operator: less_than_or_equal
+          value: "0.05"
+    obligations:
+      - type: audit
+        parameters:
+          level: standard
+    limits:
+      max_cost_usd: "0.05"
+      max_tool_calls: 5
+    reason: Low-risk search is allowed for research agents using non-sensitive data.
+tests:
+  - id: allow-search
+    name: Search request is allowed
+    request:
+      subject:
+        id: agent-1
+        type: ai_agent
+        roles:
+          - research_agent
+      action: tool.call
+      resource:
+        id: web
+        type: WebSearch
+        attributes:
+          classification: public
+      tool:
+        name: search
+        namespace: external.web
+        risk: low
+        capabilities:
+          - search
+      environment:
+        name: production
+      context:
+        estimated_cost_usd: "0.01"
+        tool_calls: 1
+    expect_decision: allow
+    expect_obligations:
+      - audit
+    expect_matched_policies:
+      - allow-research-search
+  - id: deny-shell
+    request:
+      subject:
+        id: agent-2
+        type: ai_agent
+        roles:
+          - research_agent
+      action: tool.call
+      resource:
+        id: terminal
+        type: Shell
+        attributes:
+          classification: internal
+      tool:
+        name: shell
+        risk: high
+        capabilities:
+          - command_execute
+      environment:
+        name: production
+      context:
+        estimated_cost_usd: "0.00"
+    expect_decision: deny
+    expect_matched_policies:
+      - deny-shell
+

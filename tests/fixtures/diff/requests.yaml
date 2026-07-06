@@ -1,0 +1,49 @@
+requests:
+  - subject:
+      id: agent-1
+      roles:
+        - research_agent
+    action: tool.call
+    resource:
+      id: web
+      type: WebSearch
+    tool:
+      name: search
+    model:
+      provider: ollama
+      hosting: local
+    environment:
+      name: production
+    context: {}
+  - subject:
+      id: agent-2
+      roles:
+        - research_agent
+    action: tool.call
+    resource:
+      id: web
+      type: WebSearch
+    tool:
+      name: shell
+    model:
+      provider: external-ai
+      hosting: external
+    environment:
+      name: production
+    context: {}
+  - subject:
+      id: agent-3
+      roles:
+        - research_agent
+    action: tool.call
+    resource:
+      id: web
+      type: WebSearch
+    tool:
+      name: browser_search
+    model:
+      provider: ollama
+      hosting: local
+    environment:
+      name: production
+    context: {}

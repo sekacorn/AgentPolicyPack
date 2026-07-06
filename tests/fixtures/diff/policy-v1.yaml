@@ -1,0 +1,26 @@
+schema_version: "1.0"
+bundle:
+  id: diff-example
+  name: Diff Example
+  version: "1.0.0"
+  namespace: example.diff
+  default_decision: deny
+  conflict_strategy: deny_overrides
+policies:
+  - id: allow-search
+    effect: allow
+    priority: 100
+    targets:
+      actions:
+        - tool.call
+      tools:
+        names:
+          - search
+  - id: deny-shell
+    effect: deny
+    priority: 200
+    targets:
+      tools:
+        names:
+          - shell
+

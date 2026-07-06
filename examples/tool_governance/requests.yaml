@@ -1,0 +1,63 @@
+requests:
+  - subject:
+      id: agent-1
+      type: ai_agent
+      roles:
+        - research_agent
+    action: tool.call
+    resource:
+      id: web
+      type: WebSearch
+      attributes:
+        classification: public
+    tool:
+      name: search
+      risk: low
+      capabilities:
+        - search
+    environment:
+      name: production
+    context:
+      estimated_cost_usd: "0.01"
+      tool_calls: 1
+  - subject:
+      id: agent-2
+      type: ai_agent
+      roles:
+        - research_agent
+    action: tool.call
+    resource:
+      id: terminal
+      type: Shell
+      attributes:
+        classification: internal
+    tool:
+      name: shell
+      risk: high
+      capabilities:
+        - command_execute
+    environment:
+      name: production
+    context:
+      estimated_cost_usd: "0.00"
+  - subject:
+      id: agent-3
+      type: ai_agent
+      roles:
+        - support_agent
+    action: tool.call
+    resource:
+      id: db
+      type: CustomerDatabase
+      attributes:
+        classification: confidential
+    tool:
+      name: customer_database
+      risk: high
+      capabilities:
+        - database_write
+    environment:
+      name: production
+    context:
+      estimated_cost_usd: "0.02"
+

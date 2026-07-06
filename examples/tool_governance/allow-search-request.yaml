@@ -1,0 +1,28 @@
+subject:
+  id: agent-1
+  type: ai_agent
+  roles:
+    - research_agent
+action: tool.call
+resource:
+  id: web
+  type: WebSearch
+  attributes:
+    classification: public
+tool:
+  name: search
+  namespace: external.web
+  risk: low
+  capabilities:
+    - search
+model:
+  provider: ollama
+  name: qwen2.5:3b
+  hosting: local
+environment:
+  name: production
+context:
+  request_id: req-001
+  estimated_cost_usd: "0.01"
+  tool_calls: 1
+
