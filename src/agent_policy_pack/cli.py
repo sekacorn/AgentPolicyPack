@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from pydantic import ValidationError
 
 from .constants import VERSION
 from .diffing import diff_bundles
@@ -37,6 +38,14 @@ def _load(path: Path) -> Any:
     try:
         return load_bundle(path)
     except AgentPolicyPackError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+
+
+def _load_request(path: Path) -> DecisionRequest:
+    try:
+        return DecisionRequest.model_validate(load_requests_file(path))
+    except (AgentPolicyPackError, ValidationError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(2) from exc
 
@@ -126,8 +135,7 @@ def evaluate_cmd(
     """Evaluate a request."""
 
     bundle = _load(policy)
-    req = DecisionRequest.model_validate(load_requests_file(request))
-    decision = evaluate(bundle, req)
+    decision = evaluate(bundle, _load_request(request))
     _emit(decision, output)
     if decision.effective_decision != "allow":
         raise typer.Exit(1)
@@ -173,7 +181,12 @@ def simulate_cmd(
 ) -> None:
     """Evaluate a batch of requests."""
 
-    _emit(simulate(_load(policy), load_requests(requests)), output)
+    try:
+        report = simulate(_load(policy), load_requests(requests))
+    except AgentPolicyPackError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    _emit(report, output)
 
 
 @app.command()
@@ -194,4 +207,9 @@ def compare(
 ) -> None:
     """Compare two bundles against a request batch."""
 
-    _emit(compare_bundles(_load(old), _load(new), load_requests(requests)), output)
+    try:
+        report = compare_bundles(_load(old), _load(new), load_requests(requests))
+    except AgentPolicyPackError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    _emit(report, output)

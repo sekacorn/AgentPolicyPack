@@ -27,7 +27,7 @@ def render_csv(rows: list[dict[str, Any]]) -> str:
     if not rows:
         return ""
     output = io.StringIO()
-    fieldnames = sorted(rows[0])
+    fieldnames = sorted({key for row in rows for key in row})
     writer = csv.DictWriter(output, fieldnames=fieldnames, lineterminator="\n")
     writer.writeheader()
     for row in rows:

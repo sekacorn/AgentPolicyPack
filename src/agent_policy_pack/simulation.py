@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import ValidationError
+
+from .constants import MAX_BATCH_REQUESTS
 from .evaluator import evaluate
+from .exceptions import PolicyParseError, UnsafeInputError
 from .loader import load_raw
 from .models import DecisionRequest, PolicyBundle
 
@@ -15,10 +19,13 @@ def load_requests(path: str | Path) -> list[DecisionRequest]:
     data = load_raw(path)
     items = data.get("requests", data.get("items", []))
     if not isinstance(items, list):
-        raise ValueError("Request batch must contain a requests list.")
-    if len(items) > 1_000:
-        raise ValueError("Request batch exceeds the maximum supported size.")
-    return [DecisionRequest.model_validate(item) for item in items]
+        raise PolicyParseError("Request batch must contain a requests list.")
+    if len(items) > MAX_BATCH_REQUESTS:
+        raise UnsafeInputError("Request batch exceeds the maximum supported size.")
+    try:
+        return [DecisionRequest.model_validate(item) for item in items]
+    except ValidationError as exc:
+        raise PolicyParseError(f"Invalid request batch item: {exc}") from exc
 
 
 def simulate(bundle: PolicyBundle, requests: list[DecisionRequest]) -> dict[str, object]:

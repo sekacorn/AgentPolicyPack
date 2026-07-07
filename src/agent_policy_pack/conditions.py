@@ -35,11 +35,12 @@ def _compare(left: Any, op: str, right: Any) -> bool:
     if op == "in":
         return bool(isinstance(right, (list, tuple, set, str)) and left in right)
     if op == "not_in":
-        return not (isinstance(right, (list, tuple, set, str)) and left in right)
+        # Negative operators still fail closed when the operand shape is invalid.
+        return bool(isinstance(right, (list, tuple, set, str)) and left not in right)
     if op == "contains":
         return bool(isinstance(left, (list, tuple, set, str, dict)) and right in left)
     if op == "not_contains":
-        return not (isinstance(left, (list, tuple, set, str, dict)) and right in left)
+        return bool(isinstance(left, (list, tuple, set, str, dict)) and right not in left)
     if op == "starts_with":
         return isinstance(left, str) and isinstance(right, str) and left.startswith(right)
     if op == "ends_with":
@@ -106,6 +107,8 @@ def evaluate_condition(
     if op == "not_exists":
         return left is MISSING or left is None
     if left is MISSING:
+        return False
+    if "value" not in condition and "value_from" not in condition:
         return False
     right = (
         resolve_path(request, condition["value_from"])

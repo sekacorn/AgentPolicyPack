@@ -101,6 +101,15 @@ def _validate_condition(value: Any, path: str, depth: int = 0) -> list[Finding]:
                 path,
             )
         )
+    if op not in {"exists", "not_exists"} and "value" not in value and "value_from" not in value:
+        findings.append(
+            _finding(
+                "error",
+                "MISSING_CONDITION_VALUE",
+                "Condition operator requires value or value_from.",
+                path,
+            )
+        )
     if "value_from" in value and (
         not isinstance(value["value_from"], str) or not _FIELD_RE.match(value["value_from"])
     ):

@@ -114,6 +114,8 @@ def test_field_path_and_missing_condition_branches() -> None:
     assert evaluate_condition(
         {"any": [{"field": "subject.value", "operator": "equals", "value": "abc"}]}, request
     )
+    assert not evaluate_condition({"field": "subject.value", "operator": "not_in"}, request)
+    assert not evaluate_condition({"field": "subject.value", "operator": "not_contains"}, request)
 
 
 def test_conflict_strategies() -> None:
@@ -193,6 +195,8 @@ def test_loader_rejects_unsafe_and_duplicate_yaml(tmp_path: Path) -> None:
 
 def test_csv_formula_escape() -> None:
     assert "'=cmd" in render_csv([{"value": "=cmd"}])
+    heterogeneous = render_csv([{"b": "2"}, {"a": "1"}])
+    assert heterogeneous.splitlines()[0] == "a,b"
     assert render_csv([]) == ""
 
 
@@ -235,6 +239,32 @@ def test_invalid_bundle_fails_closed_and_validation_branches() -> None:
     decision = evaluate(bundle, DecisionRequest(action="x"))
     assert decision.decision == "indeterminate"
     assert decision.effective_decision == "deny"
+
+
+def test_missing_condition_value_is_validation_error() -> None:
+    raw = {
+        "schema_version": "1.0",
+        "bundle": {
+            "id": "missing-condition-value",
+            "name": "Missing Condition Value",
+            "version": "1.0.0",
+            "namespace": "example.missing_condition_value",
+            "default_decision": "deny",
+            "conflict_strategy": "deny_overrides",
+        },
+        "policies": [
+            {
+                "id": "bad-condition",
+                "effect": "allow",
+                "priority": 1,
+                "targets": {"actions": ["x"]},
+                "conditions": {"field": "action", "operator": "not_in"},
+            }
+        ],
+    }
+    bundle = PolicyBundle.model_validate(raw)
+    assert any(finding.code == "MISSING_CONDITION_VALUE" for finding in validate_bundle(bundle))
+    assert evaluate(bundle, DecisionRequest(action="x")).decision == "indeterminate"
 
 
 def test_missing_target_object_does_not_match_allow_policy() -> None:
@@ -338,3 +368,8 @@ def test_cli_acceptance_commands(tmp_path: Path) -> None:
     out = tmp_path / "report.json"
     assert runner.invoke(app, ["test", str(EXAMPLE), "--output", str(out)]).exit_code == 0
     assert out.read_text(encoding="utf-8").startswith("{")
+    bad_requests = tmp_path / "bad-requests.yaml"
+    bad_requests.write_text("requests: nope\n", encoding="utf-8")
+    bad_result = runner.invoke(app, ["simulate", str(EXAMPLE), "--requests", str(bad_requests)])
+    assert bad_result.exit_code == 2
+    assert "Request batch must contain a requests list" in bad_result.output
