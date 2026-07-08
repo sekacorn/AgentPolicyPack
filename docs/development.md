@@ -5,6 +5,7 @@ Use PowerShell-compatible commands:
 ```powershell
 python -m pip install -e ".[dev]"
 python -m ruff check .
+python -m ruff format --check .
 python -m mypy --strict src
 python -m pytest
 python -m pytest --cov=agent_policy_pack --cov-branch
@@ -14,5 +15,4 @@ python -m build
 python -m twine check dist/*
 ```
 
-Release publishing is intentionally manual and must use the future GitHub release workflow. Do not commit, tag, publish, or create a GitHub release as part of local verification.
-
+Release publishing must use the GitHub release workflow with PyPI Trusted Publishing. Do not create a release tag until metadata, checks, artifacts, clean installs, CI, and the PyPI trusted publisher configuration are verified.
