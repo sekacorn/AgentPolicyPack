@@ -152,9 +152,8 @@ Use the development commands in `docs/development.md`. Keep behavior determinist
 
 ## License
 
-MIT.
+[Apache License 2.0](LICENSE).
 
 ## Author
 
 sekacorn
-

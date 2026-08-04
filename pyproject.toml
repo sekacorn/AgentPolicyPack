@@ -8,13 +8,13 @@ version = "0.1.0a1"
 description = "A vendor-neutral policy-as-code toolkit for governing AI agents and agentic workflows."
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
-license = { text = "MIT" }
+license = "Apache-2.0"
 authors = [
     { name = "sekacorn" }
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
