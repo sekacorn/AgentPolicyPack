@@ -50,7 +50,7 @@ def _load_request(path: Path) -> DecisionRequest:
         raise typer.Exit(2) from exc
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
     version: Annotated[bool, typer.Option("--version", help="Show version and exit.")] = False,
 ) -> None:

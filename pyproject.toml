@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agentpolicypack"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "A vendor-neutral policy-as-code toolkit for governing AI agents and agentic workflows."
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
@@ -57,7 +57,7 @@ agentpolicy = "agent_policy_pack.cli:app"
 packages = ["src/agent_policy_pack"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src", "tests", "examples", "docs", "README.md", "LICENSE", "pyproject.toml"]
+include = ["src", "tests", "examples", "docs", "README.md", "CHANGELOG.md", "LICENSE", "pyproject.toml"]
 exclude = ["dist", ".venv", "reports", ".pytest_cache", ".ruff_cache", ".mypy_cache"]
 
 [tool.ruff]

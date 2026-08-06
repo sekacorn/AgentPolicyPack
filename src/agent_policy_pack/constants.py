@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-VERSION = "0.1.0a1"
+VERSION = "0.1.0a2"
 SCHEMA_VERSION = "1.0"
 MAX_BUNDLE_BYTES = 1_000_000
 MAX_BATCH_REQUESTS = 1_000

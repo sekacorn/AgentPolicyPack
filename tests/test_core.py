@@ -26,8 +26,11 @@ REQUEST = ROOT / "examples" / "tool_governance" / "allow-search-request.yaml"
 
 
 def test_version_and_public_imports() -> None:
-    assert __version__ == "0.1.0a1"
+    assert __version__ == "0.1.0a2"
     assert load_bundle(EXAMPLE).bundle.id == "tool-governance"
+    result = CliRunner().invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert result.output.strip() == "0.1.0a2"
 
 
 def test_example_validate_lint_digest_and_test_runner() -> None:

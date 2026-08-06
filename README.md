@@ -2,7 +2,7 @@
 
 AgentPolicyPack lets organizations define, test, and carry AI-agent governance rules across models, frameworks, providers, and deployment environments.
 
-AgentPolicyPack is an alpha project. Version `0.1.0a1` is ready for public alpha release with documented limitations, not production certification.
+AgentPolicyPack is an alpha project. Version `0.1.0a2` is ready for public alpha release with documented limitations, not production certification.
 
 ## Motivation
 
@@ -120,7 +120,7 @@ Simulation evaluates request batches offline. Comparison evaluates two bundles a
 
 ## Integration Roadmap
 
-The package includes protocol types for future adapters. Version `0.1.0a1` works independently and offline. Forge, PrivateAIStack, ModelSwapBench, OpenOntologyLite, AIAuditLog, and OpenAIMeter integrations are deferred unless optional adapters are installed and tested in later releases.
+The package includes protocol types for future adapters. Version `0.1.0a2` works independently and offline. Forge, PrivateAIStack, ModelSwapBench, OpenOntologyLite, AIAuditLog, and AIMeter integrations are deferred unless optional adapters are installed and tested in later releases.
 
 ## Security Model
 
