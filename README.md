@@ -2,7 +2,8 @@
 
 AgentPolicyPack lets organizations define, test, and carry AI-agent governance rules across models, frameworks, providers, and deployment environments.
 
-AgentPolicyPack is an alpha project. Version `0.1.0a2` is ready for public alpha release with documented limitations, not production certification.
+AgentPolicyPack `0.1.0a2` is public alpha software with documented limitations,
+not production certification.
 
 ## Motivation
 
