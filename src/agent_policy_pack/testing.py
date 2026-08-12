@@ -18,6 +18,14 @@ def run_policy_tests(bundle: PolicyBundle) -> dict[str, object]:
         failures: list[str] = []
         if decision.decision != test.expect_decision:
             failures.append(f"expected decision {test.expect_decision}, got {decision.decision}")
+        if (
+            test.expect_effective_decision is not None
+            and decision.effective_decision != test.expect_effective_decision
+        ):
+            failures.append(
+                "expected effective decision "
+                f"{test.expect_effective_decision}, got {decision.effective_decision}"
+            )
         for obligation in test.expect_obligations:
             if obligation not in {item.type for item in decision.obligations}:
                 failures.append(f"missing obligation {obligation}")
@@ -32,6 +40,7 @@ def run_policy_tests(bundle: PolicyBundle) -> dict[str, object]:
                 "passed": not failures,
                 "failures": failures,
                 "decision": decision.decision,
+                "effective_decision": decision.effective_decision,
             }
         )
     return {

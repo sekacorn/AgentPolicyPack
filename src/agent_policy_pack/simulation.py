@@ -54,6 +54,7 @@ def compare(
         after = evaluate(new, request)
         if (
             before.decision != after.decision
+            or before.effective_decision != after.effective_decision
             or before.obligations != after.obligations
             or before.limits != after.limits
         ):
@@ -62,8 +63,16 @@ def compare(
                     "index": index,
                     "before": before.decision,
                     "after": after.decision,
+                    "before_effective": before.effective_decision,
+                    "after_effective": after.effective_decision,
                     "new_allow": before.decision != "allow" and after.decision == "allow",
                     "new_deny": before.decision != "deny" and after.decision == "deny",
+                    "new_effective_allow": (
+                        before.effective_decision != "allow" and after.effective_decision == "allow"
+                    ),
+                    "new_effective_deny": (
+                        before.effective_decision != "deny" and after.effective_decision == "deny"
+                    ),
                     "changed_obligations": before.obligations != after.obligations,
                     "changed_limits": before.limits != after.limits,
                 }

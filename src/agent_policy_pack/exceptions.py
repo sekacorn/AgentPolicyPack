@@ -43,7 +43,7 @@ class PolicyExportError(AgentPolicyPackError):
     """A report could not be exported."""
 
 
-class UnsafeInputError(PolicyLoadError):
+class UnsafeInputError(PolicyParseError):
     """Input was unsafe or outside supported limits."""
 
 

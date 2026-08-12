@@ -2,8 +2,8 @@
 
 AgentPolicyPack lets organizations define, test, and carry AI-agent governance rules across models, frameworks, providers, and deployment environments.
 
-AgentPolicyPack `0.1.0a2` is public alpha software with documented limitations,
-not production certification.
+AgentPolicyPack `0.2.0b1` is the first public Beta release candidate. It has
+documented limitations and is not production certification.
 
 ## Motivation
 
@@ -15,7 +15,7 @@ Organizations often encode agent rules inside one model provider, framework, run
 
 ## Core Capabilities
 
-- YAML and JSON policy bundles loaded with safe parsers.
+- YAML and JSON policy bundles loaded with safe parsers, bounded parsed structure, and no YAML anchors, aliases, or explicit tags.
 - Strict schema models that reject unknown fields.
 - Structural and semantic validation with stable finding codes.
 - Safe structured condition language with bounded nesting.
@@ -29,6 +29,8 @@ Organizations often encode agent rules inside one model provider, framework, run
 ## Architecture
 
 Policy bundles load into typed Pydantic models. Validation runs before evaluation. Invalid bundles fail closed as `indeterminate` with a deny-equivalent effective decision. The evaluator performs deterministic target matching, structured condition evaluation, conflict resolution, obligation aggregation, limit aggregation, and evidence generation. External systems remain responsible for enforcing the returned decision.
+
+Execution consumers must gate on `Decision.effective_decision` or `Decision.allowed`, not only `Decision.decision`. A matching allow policy can still become effectively denied when an applicable limit is exceeded.
 
 ## Installation
 
@@ -121,7 +123,7 @@ Simulation evaluates request batches offline. Comparison evaluates two bundles a
 
 ## Integration Roadmap
 
-The package includes protocol types for future adapters. Version `0.1.0a2` works independently and offline. Forge, PrivateAIStack, ModelSwapBench, OpenOntologyLite, AIAuditLog, and AIMeter integrations are deferred unless optional adapters are installed and tested in later releases.
+The package includes protocol types for future adapters. Version `0.2.0b1` works independently and offline. Forge, PrivateAIStack, ModelSwapBench, OpenOntologyLite, AIAuditLog, and AIMeter integrations are deferred unless optional adapters are installed and tested in later releases.
 
 ## Security Model
 

@@ -12,9 +12,8 @@ Conditions are structured with `all`, `any`, `not`, or leaf conditions using `fi
 
 Missing fields make ordinary conditions non-matching. Invalid bundles or unsafe ambiguity produce validation errors and evaluation fails closed.
 
-Decisions are `allow`, `deny`, `require_review`, or `indeterminate`. Indeterminate defaults to deny-equivalent behavior.
+Decisions are `allow`, `deny`, `require_review`, or `indeterminate`. `decision` records the controlling policy result. Consumers must use `effective_decision` (or `Decision.allowed`) before execution: an otherwise allowed request becomes effectively denied when an applicable limit is exceeded. Indeterminate defaults to deny-equivalent behavior. Embedded tests may set `expect_effective_decision` to assert that enforcement-safe result.
 
 Obligations include `audit`, `redact`, `mask`, `require_review`, `enforce_limit`, `notify`, `retain_evidence`, and `attach_policy_context`. Extension obligations must contain a namespace such as `example.custom_obligation`.
 
 Limits include cost, token, tool-call, retry, and agent-step limits. Cost values are handled with `Decimal`, not binary floating point.
-

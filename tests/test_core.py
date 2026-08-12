@@ -10,7 +10,7 @@ from agent_policy_pack import __version__, digest_value, evaluate, load_bundle
 from agent_policy_pack.cli import app
 from agent_policy_pack.conditions import evaluate_condition
 from agent_policy_pack.diffing import diff_bundles
-from agent_policy_pack.exceptions import PolicyParseError
+from agent_policy_pack.exceptions import PolicyParseError, UnsafeInputError
 from agent_policy_pack.field_path import MISSING, resolve_path
 from agent_policy_pack.loader import load_bundle as load_bundle_file
 from agent_policy_pack.models import DecisionRequest, PolicyBundle
@@ -26,11 +26,11 @@ REQUEST = ROOT / "examples" / "tool_governance" / "allow-search-request.yaml"
 
 
 def test_version_and_public_imports() -> None:
-    assert __version__ == "0.1.0a2"
+    assert __version__ == "0.2.0b1"
     assert load_bundle(EXAMPLE).bundle.id == "tool-governance"
     result = CliRunner().invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert result.output.strip() == "0.1.0a2"
+    assert result.output.strip() == "0.2.0b1"
 
 
 def test_example_validate_lint_digest_and_test_runner() -> None:
@@ -179,6 +179,68 @@ def test_simulation_compare_and_diff() -> None:
     )
 
 
+def test_compare_detects_effective_limit_regression() -> None:
+    def bundle(max_tool_calls: int) -> PolicyBundle:
+        return PolicyBundle.model_validate(
+            {
+                "schema_version": "1.0",
+                "bundle": {
+                    "id": "limited",
+                    "name": "Limited",
+                    "version": "1.0.0",
+                    "namespace": "example.limited",
+                },
+                "policies": [
+                    {
+                        "id": "allow-x",
+                        "effect": "allow",
+                        "targets": {"actions": ["x"]},
+                        "limits": {"max_tool_calls": max_tool_calls},
+                    }
+                ],
+            }
+        )
+
+    report = compare(bundle(2), bundle(1), [DecisionRequest(action="x", context={"tool_calls": 2})])
+    assert report["changed"] == 1
+    change = report["changes"][0]  # type: ignore[index]
+    assert change["before"] == change["after"] == "allow"
+    assert change["before_effective"] == "allow"
+    assert change["after_effective"] == "deny"
+
+
+def test_policy_tests_can_assert_effective_decision() -> None:
+    raw = {
+        "schema_version": "1.0",
+        "bundle": {
+            "id": "effective-tests",
+            "name": "Effective Tests",
+            "version": "1.0.0",
+            "namespace": "example.effective_tests",
+        },
+        "policies": [
+            {
+                "id": "allow-x",
+                "effect": "allow",
+                "targets": {"actions": ["x"]},
+                "limits": {"max_tool_calls": 1},
+            }
+        ],
+        "tests": [
+            {
+                "id": "limit-blocks-execution",
+                "request": {"action": "x", "context": {"tool_calls": 2}},
+                "expect_decision": "allow",
+                "expect_effective_decision": "deny",
+            }
+        ],
+    }
+    report = run_policy_tests(PolicyBundle.model_validate(raw))
+    assert report["passed"] == 1
+    result = report["results"][0]  # type: ignore[index]
+    assert result["effective_decision"] == "deny"
+
+
 def test_loader_rejects_unsafe_and_duplicate_yaml(tmp_path: Path) -> None:
     dup = tmp_path / "dup.yaml"
     dup.write_text("schema_version: '1.0'\nschema_version: '1.0'\n", encoding="utf-8")
@@ -194,6 +256,45 @@ def test_loader_rejects_unsafe_and_duplicate_yaml(tmp_path: Path) -> None:
         load_bundle_file(dup_json)
     with pytest.raises(PolicyParseError):
         load_bundle_file(tmp_path / "missing.yaml")
+
+
+@pytest.mark.parametrize(
+    "contents",
+    [
+        "schema_version: &version '1.0'\n",
+        "schema_version: *version\n",
+        "schema_version: !!str '1.0'\n",
+    ],
+)
+def test_loader_rejects_yaml_graph_features(tmp_path: Path, contents: str) -> None:
+    policy = tmp_path / "unsafe.yaml"
+    policy.write_text(contents, encoding="utf-8")
+    with pytest.raises(UnsafeInputError):
+        load_bundle_file(policy)
+
+
+def test_loader_rejects_overdeep_and_nonfinite_json(tmp_path: Path) -> None:
+    deep_json = tmp_path / "deep.json"
+    deep_json.write_text('{"value":' * 65 + "0" + "}" * 65, encoding="utf-8")
+    with pytest.raises(UnsafeInputError):
+        load_bundle_file(deep_json)
+
+    nonfinite_json = tmp_path / "nonfinite.json"
+    nonfinite_json.write_text('{"schema_version": NaN}', encoding="utf-8")
+    with pytest.raises(UnsafeInputError):
+        load_bundle_file(nonfinite_json)
+
+    nonfinite_yaml = tmp_path / "nonfinite.yaml"
+    nonfinite_yaml.write_text("schema_version: .nan\n", encoding="utf-8")
+    with pytest.raises(UnsafeInputError):
+        load_bundle_file(nonfinite_yaml)
+
+
+def test_loader_rejects_non_string_yaml_keys(tmp_path: Path) -> None:
+    policy = tmp_path / "non-string-key.yaml"
+    policy.write_text("1: value\n", encoding="utf-8")
+    with pytest.raises(PolicyParseError):
+        load_bundle_file(policy)
 
 
 def test_csv_formula_escape() -> None:

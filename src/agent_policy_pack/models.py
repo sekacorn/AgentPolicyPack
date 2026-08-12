@@ -98,6 +98,7 @@ class PolicyTest(StrictModel):
     name: str = ""
     request: Json
     expect_decision: DecisionOutcome
+    expect_effective_decision: DecisionOutcome | None = None
     expect_obligations: tuple[str, ...] = ()
     expect_limits: Json = Field(default_factory=dict)
     expect_matched_policies: tuple[str, ...] = ()

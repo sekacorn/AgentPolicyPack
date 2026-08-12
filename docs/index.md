@@ -7,5 +7,4 @@ See:
 - `policy-format.md` for the complete bundle reference.
 - `security.md` for the threat model and safe-input rules.
 - `development.md` for local verification commands.
-- `roadmap.md` for planned alpha work.
-
+- `roadmap.md` for planned post-Beta work.

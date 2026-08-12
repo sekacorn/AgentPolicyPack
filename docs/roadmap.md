@@ -1,6 +1,6 @@
 # Roadmap
 
-## 0.1.0a2
+## Future Beta Releases
 
 - Stronger policy shadowing analysis.
 - Aliases and renamed policy tracking.
@@ -9,7 +9,7 @@
 - Configurable organizational lint profiles.
 - Richer test data generators.
 
-## 0.1.0a3
+## Future Integration Releases
 
 - Deeper Forge middleware.
 - OpenOntologyLite reference validation.
@@ -17,7 +17,7 @@
 - PrivateAIStack integration examples.
 - Audit-event export for AIAuditLog.
 
-## 0.2
+## Post-Beta Policy Composition
 
 - Policy package imports.
 - Namespaced reusable policy modules.
@@ -26,4 +26,3 @@
 - Policy provenance.
 - Signed release bundles.
 - Organization-level policy layering.
-
