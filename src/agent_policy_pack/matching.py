@@ -36,6 +36,21 @@ def _mapping_or_empty(value: Any) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
 
 
+UNKNOWN_JURISDICTION = "unknown"
+
+
+def _provider_jurisdiction(provider: Mapping[str, Any]) -> str:
+    """Return the provider's declared jurisdiction, or ``"unknown"``.
+
+    A missing, empty or non-string value is ``"unknown"``, so a policy that
+    targets unknown jurisdictions also catches a request that says nothing.
+    The value is whatever the caller declared: this library never checks it.
+    """
+
+    value = provider.get("jurisdiction")
+    return value if isinstance(value, str) and value else UNKNOWN_JURISDICTION
+
+
 def matches_targets(targets: dict[str, Any], request: dict[str, Any]) -> bool:
     """Return whether a request matches policy targets."""
 
@@ -127,6 +142,8 @@ def matches_targets(targets: dict[str, Any], request: dict[str, Any]) -> bool:
         if pt.get("trust_levels") and provider.get("trust_level") not in pt["trust_levels"]:
             return False
         if pt.get("localities") and provider.get("locality") not in pt["localities"]:
+            return False
+        if pt.get("jurisdictions") and _provider_jurisdiction(provider) not in pt["jurisdictions"]:
             return False
 
     et = targets.get("environments") or targets.get("environment") or {}

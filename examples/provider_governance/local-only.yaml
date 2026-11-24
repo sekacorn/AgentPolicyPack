@@ -1,0 +1,87 @@
+# Local models only.
+#
+# A model call is allowed only when the caller reports the endpoint as local.
+# A hosted endpoint is denied by name, and a request that does not say where
+# the model runs falls through to the bundle's default decision, which is deny.
+#
+# "hosting" is whatever the calling runtime reports. This library evaluates the
+# request it is given and does not check where a model actually runs.
+schema_version: "1.0"
+bundle:
+  id: provider-local-only
+  name: Local models only
+  version: "1.0.0"
+  namespace: example.provider_governance
+  description: Allow model calls to local endpoints and deny hosted ones.
+  default_decision: deny
+  conflict_strategy: deny_overrides
+  tags:
+    - example
+    - providers
+policies:
+  - id: deny-hosted-models
+    name: Deny hosted model endpoints
+    effect: deny
+    priority: 300
+    targets:
+      actions:
+        - model.call
+      models:
+        hosting:
+          - hosted
+    obligations:
+      - type: audit
+        parameters:
+          level: detailed
+    reason: Only local model endpoints are permitted.
+  - id: allow-local-models
+    name: Allow local model endpoints
+    effect: allow
+    priority: 100
+    targets:
+      actions:
+        - model.call
+      models:
+        hosting:
+          - local
+    obligations:
+      - type: audit
+        parameters:
+          level: standard
+    reason: The model endpoint is reported as local.
+tests:
+  - id: local-endpoint-allowed
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: local
+      provider:
+        name: local_gateway
+        hosting: local
+        jurisdiction: not_applicable
+    expect_decision: allow
+    expect_matched_policies:
+      - allow-local-models
+  - id: hosted-endpoint-denied
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: hosted
+      provider:
+        name: vendor_a
+        hosting: hosted
+        jurisdiction: XA
+    expect_decision: deny
+    expect_matched_policies:
+      - deny-hosted-models
+  - id: unstated-hosting-denied-by-default
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+    expect_decision: deny
