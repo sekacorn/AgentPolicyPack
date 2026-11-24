@@ -1,0 +1,141 @@
+# Block named vendors and named jurisdictions.
+#
+# Model calls are allowed in general, except to the listed provider names and
+# to providers that declare one of the listed jurisdictions.
+#
+# XA and XB are placeholders (ISO 3166 user-assigned codes), and vendor_a is a
+# placeholder name. Replace them with your own; nothing here is a statement
+# about any real vendor or country. Values are compared exactly, so "xa" does
+# not match "XA".
+#
+# A jurisdiction is the caller's declaration. It is attested, never checked,
+# and says nothing about where a request is routed or stored. This bundle does
+# not stop a provider whose jurisdiction is "unknown": see
+# deny-unknown-jurisdiction.yaml for that.
+#
+# FAILING CLOSED: a jurisdiction target only matches a request that declares a
+# provider or model block. A request with neither matches no rule here, so this
+# bundle relies on default_decision: deny to stop it. Keep that setting.
+# AgentForge always populates the block.
+schema_version: "1.0"
+bundle:
+  id: provider-blocklist
+  name: Block vendors and jurisdictions
+  version: "1.0.0"
+  namespace: example.provider_governance
+  description: Deny model calls to listed providers and listed jurisdictions.
+  default_decision: deny
+  conflict_strategy: deny_overrides
+  tags:
+    - example
+    - providers
+policies:
+  - id: deny-listed-vendors
+    name: Deny listed vendors
+    effect: deny
+    priority: 300
+    targets:
+      actions:
+        - model.call
+      providers:
+        names:
+          - vendor_a
+    obligations:
+      - type: audit
+        parameters:
+          level: detailed
+    reason: This provider is not approved.
+  - id: deny-listed-jurisdictions
+    name: Deny listed jurisdictions
+    effect: deny
+    priority: 300
+    targets:
+      actions:
+        - model.call
+      providers:
+        jurisdictions:
+          - XA
+          - XB
+    obligations:
+      - type: audit
+        parameters:
+          level: detailed
+    reason: The provider declares a jurisdiction that is not approved.
+  - id: allow-model-calls
+    name: Allow other model calls
+    effect: allow
+    priority: 100
+    targets:
+      actions:
+        - model.call
+      # Requires a model block, so a request that describes nothing is
+      # left to the default decision instead of being allowed.
+      models:
+        hosting:
+          - local
+          - hosted
+    obligations:
+      - type: audit
+        parameters:
+          level: standard
+    reason: The provider is not on a block list.
+tests:
+  - id: unlisted-provider-allowed
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: hosted
+      provider:
+        name: vendor_b
+        hosting: hosted
+        jurisdiction: XC
+        jurisdiction_verification: attested
+    expect_decision: allow
+    expect_matched_policies:
+      - allow-model-calls
+  - id: listed-vendor-denied
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: hosted
+      provider:
+        name: vendor_a
+        hosting: hosted
+        jurisdiction: XC
+    expect_decision: deny
+    expect_matched_policies:
+      - deny-listed-vendors
+  - id: listed-jurisdiction-denied
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: hosted
+      provider:
+        name: vendor_b
+        hosting: hosted
+        jurisdiction: XB
+    expect_decision: deny
+    expect_matched_policies:
+      - deny-listed-jurisdictions
+  - id: local-endpoint-allowed
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: local
+      provider:
+        name: local_gateway
+        hosting: local
+        jurisdiction: not_applicable
+    expect_decision: allow
+  - id: no-model-or-provider-denied-by-default
+    request:
+      action: model.call
+    expect_decision: deny

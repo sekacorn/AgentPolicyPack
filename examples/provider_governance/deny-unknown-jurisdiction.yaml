@@ -1,0 +1,132 @@
+# Deny providers whose jurisdiction is unknown.
+#
+# A hosted model call is allowed only when the provider declares a
+# jurisdiction. A provider that reports "unknown", or reports nothing at all,
+# is denied: a missing jurisdiction is treated as "unknown".
+#
+# Local endpoints report "not_applicable" and are allowed.
+#
+# This makes an operator describe an endpoint before using it. It does not make
+# the description true: a declared jurisdiction is attested, never checked.
+#
+# FAILING CLOSED: a jurisdiction target only matches a request that declares a
+# provider or model block. A request with neither matches no rule here, so this
+# bundle relies on default_decision: deny to stop it. Keep that setting.
+# AgentForge always populates the block.
+schema_version: "1.0"
+bundle:
+  id: provider-deny-unknown-jurisdiction
+  name: Deny unknown jurisdictions
+  version: "1.0.0"
+  namespace: example.provider_governance
+  description: Deny model calls to providers with no declared jurisdiction.
+  default_decision: deny
+  conflict_strategy: deny_overrides
+  tags:
+    - example
+    - providers
+policies:
+  - id: deny-unknown-jurisdiction
+    name: Deny unknown jurisdictions
+    effect: deny
+    priority: 300
+    targets:
+      actions:
+        - model.call
+      providers:
+        jurisdictions:
+          - unknown
+    obligations:
+      - type: audit
+        parameters:
+          level: detailed
+    reason: The provider's jurisdiction is not declared.
+  - id: allow-model-calls
+    name: Allow model calls to described providers
+    effect: allow
+    priority: 100
+    targets:
+      actions:
+        - model.call
+      # Requires a model block, so a request that describes nothing is
+      # left to the default decision instead of being allowed.
+      models:
+        hosting:
+          - local
+          - hosted
+    obligations:
+      - type: audit
+        parameters:
+          level: standard
+    reason: The provider declares a jurisdiction.
+tests:
+  - id: declared-jurisdiction-allowed
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: hosted
+      provider:
+        name: vendor_b
+        hosting: hosted
+        jurisdiction: XC
+        jurisdiction_verification: attested
+    expect_decision: allow
+    expect_matched_policies:
+      - allow-model-calls
+  - id: unknown-jurisdiction-denied
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: hosted
+      provider:
+        name: openai_compatible
+        hosting: hosted
+        jurisdiction: unknown
+        jurisdiction_verification: unknown
+    expect_decision: deny
+    expect_matched_policies:
+      - deny-unknown-jurisdiction
+  - id: missing-jurisdiction-denied
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: hosted
+      provider:
+        name: vendor_b
+        hosting: hosted
+    expect_decision: deny
+    expect_matched_policies:
+      - deny-unknown-jurisdiction
+  - id: model-block-only-denied
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: hosted
+    expect_decision: deny
+    expect_matched_policies:
+      - deny-unknown-jurisdiction
+  - id: no-model-or-provider-denied-by-default
+    request:
+      action: model.call
+    expect_decision: deny
+  - id: local-endpoint-allowed
+    request:
+      action: model.call
+      model:
+        provider: openai_compatible
+        name: example-model
+        hosting: local
+      provider:
+        name: local_gateway
+        hosting: local
+        jurisdiction: not_applicable
+        jurisdiction_verification: not_applicable
+    expect_decision: allow
