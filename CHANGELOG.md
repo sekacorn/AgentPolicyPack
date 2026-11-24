@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add an optional `jurisdictions` provider target, matched exactly against `provider.jurisdiction`. A missing, empty, or non-string jurisdiction is treated as `unknown`, so a policy can deny providers that declare nothing. The value is the caller's declaration and is never checked. Existing bundles and requests are unaffected.
+- Add an optional `jurisdictions` provider target, matched exactly against `provider.jurisdiction`. A missing, empty, or non-string jurisdiction is treated as `unknown`, so a policy can deny providers that declare nothing. The value is the caller's declaration and is never checked. A jurisdiction target only matches a request that declares a `provider` or `model` block, so failing closed also needs `default_decision: deny`. Existing bundles and requests are unaffected.
 - Add `examples/provider_governance/` with three tested bundles: local endpoints only, block listed vendors and jurisdictions, and deny unknown jurisdictions.
 - Document model and provider targets in `docs/policy-format.md`.
 

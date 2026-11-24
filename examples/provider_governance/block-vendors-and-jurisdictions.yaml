@@ -12,6 +12,11 @@
 # and says nothing about where a request is routed or stored. This bundle does
 # not stop a provider whose jurisdiction is "unknown": see
 # deny-unknown-jurisdiction.yaml for that.
+#
+# FAILING CLOSED: a jurisdiction target only matches a request that declares a
+# provider or model block. A request with neither matches no rule here, so this
+# bundle relies on default_decision: deny to stop it. Keep that setting.
+# AgentForge always populates the block.
 schema_version: "1.0"
 bundle:
   id: provider-blocklist

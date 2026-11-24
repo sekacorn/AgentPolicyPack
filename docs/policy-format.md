@@ -16,7 +16,12 @@ Targets may match subjects, actions, resources, tools, models, providers, and en
 
 - **A missing jurisdiction is `unknown`.** An absent, empty, or non-string `provider.jurisdiction` is treated as the string `unknown`, so a policy targeting `jurisdictions: [unknown]` also catches a request that declares nothing.
 - **A jurisdiction is a declaration, not a finding.** The value is attested by whoever built the request. This library evaluates it and never checks it, and it says nothing about where a request is routed or stored. A request may carry `provider.jurisdiction_verification` for audit; no target reads it, so it cannot change a decision.
-- A deny rule on `unknown` does not match a request that has no `model` or `provider` block at all. Pair it with `default_decision: deny` and an allow rule that requires a model block, as the examples do.
+
+#### Failing closed
+
+**A jurisdiction target only matches a request that declares a `provider` or `model` block.** A request with neither matches no jurisdiction target, not even `jurisdictions: [unknown]`, so a deny rule on its own does not stop it. To fail closed you must also set `default_decision: deny`, and make sure no allow rule matches a request that describes no model; the examples do this by having their allow rule require a model block.
+
+AgentForge always populates both blocks on a model call, so its requests are always matched. Other callers must do the same or rely on the default decision.
 
 `examples/provider_governance/` has three bundles with embedded tests: `local-only.yaml` (local endpoints only), `block-vendors-and-jurisdictions.yaml` (deny listed provider names and jurisdictions), and `deny-unknown-jurisdiction.yaml` (deny providers that declare no jurisdiction). Their vendor names and jurisdiction codes are placeholders.
 
