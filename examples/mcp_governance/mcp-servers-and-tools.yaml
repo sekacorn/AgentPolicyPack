@@ -1,0 +1,199 @@
+# MCP servers and tools.
+#
+# AgentForge asks two questions before it uses an MCP tool:
+#
+#   action: mcp.server.connect   resource: {id: <server_id>, type: McpServer,
+#                                           attributes: {transport, origin, hosting}}
+#   action: tool.call            resource: {id: <server_id>/<tool>, type: McpTool,
+#                                           attributes: {server_id, hosting}}
+#                                tool: {name, namespace: mcp.<server_id>, definition_sha256}
+#
+# This bundle denies by default, allows listed local servers, requires review
+# before connecting to any hosted server, allows one server's tools by
+# namespace, and denies one destructive tool by name.
+#
+# "hosting" is what the calling runtime derived from the server's origin
+# (AgentForge derives it; it is never declared). This library evaluates the
+# request it is given and does not check where a server runs.
+schema_version: "1.0"
+bundle:
+  id: mcp-governance
+  name: MCP server and tool governance
+  version: "1.0.0"
+  namespace: example.mcp_governance
+  description: Deny MCP use by default; allow listed local servers and their tools.
+  default_decision: deny
+  conflict_strategy: deny_overrides
+  tags:
+    - example
+    - mcp
+    - tools
+policies:
+  - id: deny-destructive-file-tool
+    name: Deny the delete tool on the files server
+    effect: deny
+    priority: 400
+    targets:
+      actions:
+        - tool.call
+      tools:
+        names:
+          - delete
+        namespaces:
+          - mcp.files
+    obligations:
+      - type: audit
+        parameters:
+          level: detailed
+    reason: Deleting files through MCP is prohibited.
+  - id: review-hosted-mcp-servers
+    name: Require review before connecting to a hosted MCP server
+    effect: require_review
+    priority: 300
+    targets:
+      actions:
+        - mcp.server.connect
+      resources:
+        types:
+          - McpServer
+        attributes:
+          hosting: hosted
+    obligations:
+      - type: require_review
+        parameters:
+          reviewer_role: security
+          timeout_behavior: deny
+    reason: A hosted MCP server receives tool arguments; a reviewer must approve it.
+  - id: allow-listed-local-servers
+    name: Allow listed local MCP servers
+    effect: allow
+    priority: 200
+    targets:
+      actions:
+        - mcp.server.connect
+      resources:
+        types:
+          - McpServer
+        ids:
+          - files
+          - wiki
+        attributes:
+          hosting: local
+    obligations:
+      - type: audit
+        parameters:
+          level: standard
+    reason: The server is listed and runs locally.
+  - id: allow-files-tools
+    name: Allow tools from the files server
+    effect: allow
+    priority: 100
+    targets:
+      actions:
+        - tool.call
+      tools:
+        namespaces:
+          - mcp.files
+    obligations:
+      - type: audit
+        parameters:
+          level: standard
+    reason: Tools on the files server are permitted.
+tests:
+  - id: listed-local-server-allowed
+    request:
+      action: mcp.server.connect
+      resource:
+        id: files
+        type: McpServer
+        attributes:
+          transport: streamable_http
+          origin: http://127.0.0.1:8765
+          hosting: local
+    expect_decision: allow
+    expect_matched_policies:
+      - allow-listed-local-servers
+  - id: stdio-server-allowed
+    request:
+      action: mcp.server.connect
+      resource:
+        id: wiki
+        type: McpServer
+        attributes:
+          transport: stdio
+          origin: null
+          hosting: local
+    expect_decision: allow
+  - id: unlisted-local-server-denied-by-default
+    request:
+      action: mcp.server.connect
+      resource:
+        id: scratch
+        type: McpServer
+        attributes:
+          transport: stdio
+          origin: null
+          hosting: local
+    expect_decision: deny
+  - id: hosted-server-needs-review
+    request:
+      action: mcp.server.connect
+      resource:
+        id: crm
+        type: McpServer
+        attributes:
+          transport: streamable_http
+          origin: https://mcp.crm.example.com
+          hosting: hosted
+    expect_decision: require_review
+    expect_matched_policies:
+      - review-hosted-mcp-servers
+  - id: files-tool-allowed
+    request:
+      action: tool.call
+      resource:
+        id: files/search
+        type: McpTool
+        attributes:
+          server_id: files
+          hosting: local
+      tool:
+        name: search
+        namespace: mcp.files
+        definition_sha256: 0fd51c430bff67af9f809eb8d94565f0db9b3a2dc283b09c8120d2baeec31a35
+      context:
+        arguments:
+          query: refunds
+    expect_decision: allow
+    expect_matched_policies:
+      - allow-files-tools
+  - id: destructive-tool-denied
+    request:
+      action: tool.call
+      resource:
+        id: files/delete
+        type: McpTool
+        attributes:
+          server_id: files
+          hosting: local
+      tool:
+        name: delete
+        namespace: mcp.files
+        definition_sha256: 1111111111111111111111111111111111111111111111111111111111111111
+    expect_decision: deny
+    expect_matched_policies:
+      - deny-destructive-file-tool
+  - id: other-server-tool-denied-by-default
+    request:
+      action: tool.call
+      resource:
+        id: wiki/search
+        type: McpTool
+        attributes:
+          server_id: wiki
+          hosting: local
+      tool:
+        name: search
+        namespace: mcp.wiki
+        definition_sha256: 2222222222222222222222222222222222222222222222222222222222222222
+    expect_decision: deny

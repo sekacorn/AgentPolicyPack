@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `examples/mcp_governance/`, a tested bundle for MCP servers and tools as AgentForge requests them. It covers four cases:
+  - `mcp.server.connect` allowed for listed local servers;
+  - review required before connecting to a hosted server;
+  - `tool.call` allowed for one server's tools by namespace;
+  - one destructive tool denied by name.
+
+  Everything else is denied by default. No library change: the existing resource and tool targets express it.
 - Add an optional `jurisdictions` provider target, matched exactly against `provider.jurisdiction`. A missing, empty, or non-string jurisdiction is treated as `unknown`, so a policy can deny providers that declare nothing. The value is the caller's declaration and is never checked. A jurisdiction target only matches a request that declares a `provider` or `model` block, so failing closed also needs `default_decision: deny`. Existing bundles and requests are unaffected.
 - Add `examples/provider_governance/` with three tested bundles: local endpoints only, block listed vendors and jurisdictions, and deny unknown jurisdictions.
 - Document model and provider targets in `docs/policy-format.md`.

@@ -82,6 +82,7 @@ agentpolicy evaluate examples/tool_governance/policy.yaml --request examples/too
 
 ```powershell
 agentpolicy test examples/tool_governance/policy.yaml
+agentpolicy test examples/mcp_governance/mcp-servers-and-tools.yaml
 agentpolicy coverage examples/tool_governance/policy.yaml
 ```
 
