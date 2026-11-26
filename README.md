@@ -2,8 +2,12 @@
 
 AgentPolicyPack lets organizations define, test, and carry AI-agent governance rules across models, frameworks, providers, and deployment environments.
 
-AgentPolicyPack `0.2.0b1` is the first public Beta release candidate. It has
-documented limitations and is not production certification.
+Latest release: `0.2.0b1` on [PyPI](https://pypi.org/project/agentpolicypack/), a Beta release
+with documented limitations. It is not production certification.
+
+**On `main`, not yet released:** the provider `jurisdictions` target and two new tested example
+folders, `examples/provider_governance/` and `examples/mcp_governance/` (MCP servers and tools as
+AgentForge requests them). See the [changelog](CHANGELOG.md).
 
 ## Motivation
 
@@ -19,7 +23,8 @@ Organizations often encode agent rules inside one model provider, framework, run
 - Strict schema models that reject unknown fields.
 - Structural and semantic validation with stable finding codes.
 - Safe structured condition language with bounded nesting.
-- Target matching for subjects, actions, resources, tools, models, providers, and environments.
+- Target matching for subjects, actions, resources, tools, models, providers, and environments
+  (provider `jurisdictions` matching is on `main`, not yet released).
 - Conflict strategies: `deny_overrides`, `allow_overrides`, `first_applicable`, `highest_priority`, and `only_one_applicable`.
 - Effects: `allow`, `deny`, `require_review`, `limit`, `redact`, and `log_only`.
 - Obligations and most-restrictive limit aggregation.
@@ -124,11 +129,15 @@ Simulation evaluates request batches offline. Comparison evaluates two bundles a
 
 ## Integration Roadmap
 
-The package includes protocol types for future adapters. Version `0.2.0b1` works independently and offline. Forge, PrivateAIStack, ModelSwapBench, OpenOntologyLite, AIAuditLog, and AIMeter integrations are deferred unless optional adapters are installed and tested in later releases.
+The package includes protocol types for future adapters. It works independently and offline. Forge, PrivateAIStack, ModelSwapBench, OpenOntologyLite, AIAuditLog, and AIMeter integrations are deferred unless optional adapters are installed and tested in later releases.
 
-## Security Model
+## Security
 
 AgentPolicyPack uses safe YAML loading, strict unknown-field rejection, bounded condition nesting, safe glob-style patterns, deterministic serialization, and fail-closed defaults. It never uses Python `eval` or `exec`, never imports modules named by policy files, and never follows remote URLs.
+
+**Advisories.** None have been published for `agentpolicypack`. See [SECURITY.md](SECURITY.md) for
+how to report a vulnerability; published advisories appear at
+[github.com/sekacorn/AgentPolicyPack/security/advisories](https://github.com/sekacorn/AgentPolicyPack/security/advisories).
 
 ## Limitations
 
